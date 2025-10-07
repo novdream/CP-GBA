@@ -248,20 +248,14 @@ elif args.selection_method =='cluster_degree':
 # idx_attach = select_attach_nodes(data,args,unlabeled_idx,args.num_attach)
 unlabeled_idx =  torch.tensor(list(set(unlabeled_idx.cpu().numpy()) - set(idx_attach.cpu().numpy()))).to(device)
 
-from prompts.UIAP import UIAP
-from prompts.prompt import UIAP as oldUIAP
-from prompts.gcl_new_prompt import UIAP as gclUIAP
-from prompts.gpl_eumc import UIAP as gplUIAP
-from prompts.time_prompt import UIAP as timeEMUC
-from utils import prune_unrelated_edge,label_num,random_select
+from CPGBA import UIAP as CPGBA
 print(args,flush=True)
 print(idx_attach,flush=True)
 print(unlabeled_idx,flush=True)
 print('train size:',len(idx_train)/data.num_nodes,flush=True)
 print('eval size:',len(idx_eval)/data.num_nodes,flush=True)
 print('test size:',len(idx_clean_test)/data.num_nodes,flush=True)
-# nodes_idx =  label_num(unlabeled_idx,labels)
-# idx_clean = random_select(nodes_idx,top_k = args.top_k).to(device)
+
 from collections import Counter
 train_label_counts = Counter([ label.item() for label in labels[idx_train]])
 eval_label_counts = Counter([ label.item() for label in labels[idx_eval]])
@@ -272,187 +266,6 @@ print('train size:',train_label_counts,flush=True)
 print('eval size:',eval_label_counts,flush=True)
 print('cla test size:',clean_test_counts,flush=True)
 print('atk test size:',atk_label_counts,flush=True)
-Iftrain = True
-if Iftrain:
-    if args.mode:
-        model = UIAP(args,device,features,edge_index,labels)
-        model.init_promptPool(idx_attach,idx_train,idx_eval)
-        model.fit(features, edge_index, None, labels, idx_train, idx_attach,unlabeled_idx)
-        print('==train over==')
-    #     poison_x, poison_edge_index,poison_labels,_,_= model.get_attach_poisoned()
-    #     if(args.defense_mode == 'prune'):
-    #         poison_edge_index,_ = prune_unrelated_edge(args,poison_edge_index,None,poison_x,device,large_graph=False)
-    else:
-        if args.lr_method == 'GSL':
-            print('GSL',flush=True)
-            model = oldUIAP(args,device,data,idx_attach)
-        elif args.lr_method == 'GCL':
-            print('GCL',flush=True)
-            model = gclUIAP(args,device,data,idx_attach)
-        # model = timeEMUC(args,device,data,idx_attach)
-        elif args.lr_method == 'GPL':
-            print('GPL',flush=True)
-            model = gplUIAP(args,device,data,idx_attach)
-        model.fit(features, edge_index, None, labels, idx_train, idx_eval,idx_attach,unlabeled_idx,idx_atk,idx_clean_test,mask_edge_index)
-        print('==train over==')
-        # poison_x, poison_edge_index,poison_edge_weights,poison_labels,_,_= model.get_attach_poisoned()
-        # # poison_x, poison_edge_index,poison_edge_weights,poison_labels = features,edge_index,torch.ones_like(poison_edge_weights.shape[1]).to(device),labels
-        
-        # if(args.defense_mode == 'prune'):
-        #     poison_edge_index,poison_edge_weights = prune_unrelated_edge(args,poison_edge_index,poison_edge_weights,poison_x,device,large_graph=True)
-else:
-    print('==test begin==')
-    if args.mode:
-        model = UIAP(args,device,features,edge_index,labels)
-        model.load_state_dict(torch.load('./parameters/{}.pth'.format(args.dataset))) 
-        poison_x, poison_edge_index,poison_labels,_,_= model.get_attach_poisoned()
-        if(args.defense_mode == 'prune'):
-            poison_edge_index,_ = prune_unrelated_edge(args,poison_edge_index,None,poison_x,device,large_graph=False)
-    else:
-        model = oldUIAP(args,device)
-        print(model.state_dict().keys())
-        model.load_state_dict(torch.load('./parameters/{}.pth'.format(args.dataset))) 
-        poison_x, poison_edge_index,poison_edge_weights,poison_labels,_,_= model.get_attach_poisoned()
-        # poison_x, poison_edge_index,poison_edge_weights,poison_labels = features,edge_index,torch.ones_like(poison_edge_weights.shape[1]).to(device),labels
-        if(args.defense_mode == 'prune'):
-            poison_edge_index,poison_edge_weights = prune_unrelated_edge(args,poison_edge_index,poison_edge_weights,poison_x,device,large_graph=True)
+model = CPGBA(args,device,data,idx_attach)
+model.fit(features, edge_index, None, labels, idx_train, idx_eval,idx_attach,unlabeled_idx,idx_atk,idx_clean_test,mask_edge_index)
 
-
-    bkd_tn_nodes = torch.cat([idx_train,idx_attach]).to(device)
-
-    from construct import model_construct
-    edge_index = data.edge_index
-    models = ['GCN','GAT', 'GraphSage']
-    # models = ['GraphSage']
-    total_overall_asr = 0
-    total_overall_ca = 0
-    for test_model in models:
-        args.test_model = test_model
-        rs = np.random.RandomState(args.seed)
-        seeds = rs.randint(1000,size=5)
-        # seeds = [args.seed]
-        overall_asr = 0
-        overall_ca = 0
-        for seed in seeds:
-            args.seed = seed
-            np.random.seed(args.seed)
-            torch.manual_seed(args.seed)
-            torch.cuda.manual_seed(args.seed)
-            print(args)
-            test_model = model_construct(args,args.test_model,data,device).to(device) 
-            if args.mode:
-                test_model.fit(poison_x,poison_edge_index,None,poison_labels, bkd_tn_nodes, idx_eval,args.epochs,verbose =False)
-                output = test_model(poison_x,poison_edge_index,None)
-            else:
-                test_model.fit(poison_x,poison_edge_index,poison_edge_weights,poison_labels, bkd_tn_nodes, idx_eval,args.epochs,verbose =False)
-                output = test_model(poison_x,poison_edge_index,poison_edge_weights)
-            # train_attach_rate = (output.argmax(dim=1)[idx_attach]==args.target_class).float().mean()
-            # print("target class rate on Vs: {:.4f}".format(train_attach_rate))
-            
-            
-            induct_edge_index = torch.cat([poison_edge_index,mask_edge_index],dim=1)
-            induct_edge_weights = torch.cat([poison_edge_weights,torch.ones([mask_edge_index.shape[1]],dtype=torch.float,device=device)])
-            # poison_edge_index,poison_x,poison_edge_weights= model.test(idx_atk,idx_attach,features,edge_index)
-            clean_acc = test_model.test(poison_x,induct_edge_index,induct_edge_weights,data.y,idx_clean_test)
-
-            print("accuracy on clean test nodes: {:.4f}".format(clean_acc))
-
-            total_normal_edges_count = 0
-            total_special_edges_count = 0
-            if(args.evaluate_mode == '1by1'):
-                from torch_geometric.utils  import k_hop_subgraph
-                overall_induct_edge_index, overall_induct_edge_weights = induct_edge_index.clone(),induct_edge_weights.clone()
-                asr = 0
-                # flip_idx_atk = idx_atk[(data.y[idx_atk] != args.target_class).nonzero().flatten()]
-                for i, idx in enumerate(idx_atk):
-                    idx=int(idx)
-                    sub_induct_nodeset, sub_induct_edge_index, sub_mapping, sub_edge_mask  = k_hop_subgraph(node_idx = [idx], num_hops = 2, edge_index = overall_induct_edge_index, relabel_nodes=True) # sub_mapping means the index of [idx] in sub)nodeset
-                    
-                    ori_node_idx = sub_induct_nodeset[sub_mapping]
-                    relabeled_node_idx = sub_mapping
-                    sub_induct_edge_weights = torch.ones([sub_induct_edge_index.shape[1]]).to(device)
-                    asr_all_target = 0
-                    for index in range(labels.max().item()+1):
-                        
-                        with torch.no_grad():
-                        
-                            induct_x, induct_edge_index,induct_edge_weights,_,trojan_edge_index,target_class = model.get_attach_poision(relabeled_node_idx,poison_x[sub_induct_nodeset],sub_induct_edge_index,sub_induct_edge_weights,device,index)
-                        
-                            induct_x, induct_edge_index,induct_edge_weights = induct_x.clone().detach(), induct_edge_index.clone().detach(),induct_edge_weights.clone().detach()
-                        
-                            # # do pruning in test datas'''
-                            if args.mode:
-                                if(args.defense_mode == 'prune'):
-                                    induct_edge_index,_ = prune_unrelated_edge(args,induct_edge_index,None,induct_x,device)
-                                output = test_model(induct_x,induct_edge_index,None)
-                            else:
-                                if(args.defense_mode == 'prune'):
-                                    
-                                    origin_edge_index = induct_edge_index
-                                
-                                    
-                                    induct_edge_index,induct_edge_weights = prune_unrelated_edge(args,induct_edge_index,induct_edge_weights,induct_x,device)
-                                    normal_edges_count,special_edges_count = count_removed_edges(origin_edge_index, induct_edge_index, trojan_edge_index)
-                                    # count_removed_edges(origin_edge_index, induct_edge_index, trojan_edge_index, origin_edge_index)
-                                    # normal_edges_count,special_edges_count = count_edges(old_edge_index,induct_edge_index,total_nodes)
-                                    total_special_edges_count += special_edges_count
-                                    total_normal_edges_count += normal_edges_count
-                                    
-                                
-                                output = test_model(induct_x,induct_edge_index,induct_edge_weights)
-                                
-                            # train_attach_rate = (output.argmax(dim=1)[relabeled_node_idx]==args.target_class).float().mean()
-                            train_attach_rate = (output.argmax(dim=1)[relabeled_node_idx]==target_class).float().mean()
-                            asr_all_target +=train_attach_rate
-                            induct_x, induct_edge_index,induct_edge_weights = induct_x.cpu(), induct_edge_index.cpu(),induct_edge_weights.cpu()
-                            output = output.cpu()
-                    asr_all_target = asr_all_target/(labels.max().item()+1)
-                    asr += asr_all_target
-                asr = asr/(idx_atk.shape[0])
-                # flip_asr = flip_asr/(flip_idx_atk.shape[0])
-                print('Pruning Number:{}'.format(total_normal_edges_count+total_special_edges_count))
-                if total_normal_edges_count+total_special_edges_count:
-                    print('Pruning Ratio:{:.4f}'.format(total_special_edges_count/(total_normal_edges_count+total_special_edges_count)))
-                else:
-                    print('Pruning Ratio:{:.4f}'.format(0))
-                print("Overall ASR: {:.4f}".format(asr))
-                # print("Flip ASR: {:.4f}/{} nodes".format(flip_asr,flip_idx_atk.shape[0]))
-            elif args.evaluate_mode == 'overall':
-                if args.mode:
-                    induct_x, induct_edge_index,_,_,_= model.get_attach_poision(idx_atk, poison_x,induct_edge_index,device)
-                else:
-                    induct_x, induct_edge_index,induct_edge_weights,_,_,_= model.get_attach_poision(idx_atk, poison_x,induct_edge_index,induct_edge_weights,device)
-                induct_edge_weights = induct_edge_weights.clone().detach()
-                induct_x, induct_edge_index= induct_x.clone().detach(), induct_edge_index.clone().detach()
-                if args.mode:
-                    if(args.defense_mode == 'prune'):
-                        induct_edge_index,_ = prune_unrelated_edge(args,induct_edge_index,None,induct_x,device)
-                    output = test_model(induct_x,induct_edge_index,None)
-                else:
-                    if(args.defense_mode == 'prune'):
-                        induct_edge_index,induct_edge_weights = prune_unrelated_edge(args,induct_edge_index,induct_edge_weights,induct_x,device)
-                    output = test_model(induct_x,induct_edge_index,induct_edge_weights)
-                train_attach_rate = (output.argmax(dim=1)[idx_atk]==args.target_class).float().mean()
-                
-                print("ASR: {:.4f}".format(train_attach_rate))
-                
-                asr+= train_attach_rate
-            overall_asr += asr
-
-        overall_asr = overall_asr/len(seeds)
-        print("Overall ASR: {:.4f} ({} model, Seed: {})".format(overall_asr, args.test_model, args.seed))
-        csv_file = 'result/{}_{}.csv'.format(args.test_model,args.dataset)
-
-        
-        os.makedirs('result', exist_ok=True)
-
-    
-        if not os.path.isfile(csv_file):
-            with open(csv_file, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow(['prompt_size', 'norm_position', 'num_prompts', 'layer', 'asr','defense','new'])
-
-
-        with open(csv_file, mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([args.prompt_size, args.norm_weight, args.num_prompts, args.layer, float(overall_asr),args.defense_mode,args.new])

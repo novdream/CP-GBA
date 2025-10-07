@@ -168,9 +168,9 @@ import itertools
 from ProG.utils.constraint import constraint
 #unnoticeable injection atttack prompt
 from utils import merge_graphs,getTargetCLass,prune_unrelated_edge_isolated,getRandomClass,getSelfClass,train_classifer,train_classifer_cora
-class UIAP(torch.nn.Module):
+class CPGBA(torch.nn.Module):
     def __init__(self,args, device,data,idx_attach):
-        super(UIAP, self).__init__() 
+        super(CPGBA, self).__init__() 
         self.args = args
         self.device = device
         self.weights = None
