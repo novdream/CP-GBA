@@ -54,7 +54,7 @@ The experiments are conducted on three public real-world datasets, i.e., Cora, P
 
 ## Training and Testing
 
-To train and test EUMC , run this command:
+To train and test CP-GBA , run this command:
 
 ```train
 bash train.sh
