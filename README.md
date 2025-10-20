@@ -50,7 +50,7 @@ pip install ogb==1.3.6
 pip install pandas torchmetrics Deprecated
 ```
 ## Data
-The experiments are conducted on three public real-world datasets, i.e., Cora, Pubmed, Facebook, which can be automatically downloaded to `./data` through torch-geometric API.
+The experiments are conducted on three public real-world datasets, i.e., Cora, Pubmed, Facebook and OGB-arxiv, which can be automatically downloaded to `./data` through torch-geometric API.
 
 ## Training and Testing
 
