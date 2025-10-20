@@ -52,24 +52,15 @@ pip install pandas torchmetrics Deprecated
 ## Data
 The experiments are conducted on three public real-world datasets, i.e., Cora, Pubmed, Facebook, which can be automatically downloaded to `./data` through torch-geometric API.
 
-## Training
+## Training and Testing
 
-To train CP-GBA , run this command:
+To train and test EUMC , run this command:
 
 ```train
-python train.py
+bash train.sh
 ```
 
-You can set the dataset parameter in  train.py to achieve the evaluation of specific datasets. The specific parameters are elaborated in detail in the paper.
-
-## Evaluation
-
-To evaluate our model on target dataset, run:
-
-```eval
-python train.py --dataset Cora --eval
-```
-You can set the dataset and eval parameters in train.py to achieve the evaluation of specific datasets.
+You can set the dataset parameter in  `train.sh` to achieve the evaluation of specific datasets. The specific parameters are elaborated in detail in the paper.
 
 ## Results
 
@@ -85,6 +76,9 @@ Our model achieves the following performance on(ASR | CA) :
 |          |    GPL | 0.54 \| 0.39 | 0.65 \| 0.50 | 0.82 \| 0.45 | 1.00 \| 0.44 |
 |          |    GSL | 0.68 \| 0.88 | 0.80 \| 0.88 | 0.80 \| 0.88 | 0.92 \| 0.85 |
 | Facebook |    GCL | 0.23 \| 0.83 | 0.84 \| 0.80 | 0.27 \| 0.78 | 0.92 \| 0.79 |
+|          |    GPL | 0.33 \| 0.31 | 0.30 \| 0.34 | 0.36 \| 0.33 | 0.99 \| 0.39 |
+|          |    GSL | 0.68 \| 0.88 | 0.80 \| 0.88 | 0.80 \| 0.88 | 0.92 \| 0.85 |
+| OGB-arxiv|    GCL | 0.23 \| 0.83 | 0.84 \| 0.80 | 0.27 \| 0.78 | 0.92 \| 0.79 |
 |          |    GPL | 0.33 \| 0.31 | 0.30 \| 0.34 | 0.36 \| 0.33 | 0.99 \| 0.39 |
 
 
