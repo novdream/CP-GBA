@@ -1,6 +1,12 @@
 
 # CP-GBA: Cross-Paradigm Graph Backdoor Attacks with Promptable Subgraph Triggers
 
+<table style="width:20%; border-collapse: collapse;">
+  <tr>
+    <th style="border: 1px solid black;text-align:center;"><a href="https://arxiv.org/abs/2510.22555">Paper</a></th>
+  </tr>
+</table>
+
 
 ## Introduction
 
@@ -62,27 +68,19 @@ bash train.sh
 
 You can set the dataset parameter in  `train.sh` to achieve the evaluation of specific datasets. The specific parameters are elaborated in detail in the paper.
 
-## Results
-
-Our model achieves the following performance on(ASR | CA) :
-
-|Dataset   | Method | GTA | UGBA | DPGBA |CP-GBA|
-| -------- |------- | --- | ---- |------ | ------ |
-|          |    GSL | 0.75 \| 0.82 | 0.76 \| 0.82 | 0.78 \| 0.81 | 0.97 \| 0.81 |
-|   Cora   |    GCL | 0.25 \| 0.69 | 0.51 \| 0.70 | 0.09 \| 0.71 | 0.91 \| 0.76 |
-|          |    GPL | 0.51 \| 0.21 | 0.63 \| 0.26 | 0.46 \| 0.29 | 0.99 \| 0.34 |
-|          |    GSL | 0.79 \| 0.87 | 0.79 \| 0.86 | 0.66 \| 0.87 | 0.96 \| 0.84 |
-|  Pubmed  |    GCL | 1.00 \| 0.20 | 0.67 \| 0.84 | 0.23 \| 0.84 | 0.93 \| 0.84 |
-|          |    GPL | 0.54 \| 0.39 | 0.65 \| 0.50 | 0.82 \| 0.45 | 1.00 \| 0.44 |
-|          |    GSL | 0.68 \| 0.88 | 0.80 \| 0.88 | 0.80 \| 0.88 | 0.92 \| 0.85 |
-| Facebook |    GCL | 0.23 \| 0.83 | 0.84 \| 0.80 | 0.27 \| 0.78 | 0.92 \| 0.79 |
-|          |    GPL | 0.33 \| 0.31 | 0.30 \| 0.34 | 0.36 \| 0.33 | 0.99 \| 0.39 |
-|          |    GSL | 0.68 \| 0.23 | 0.80 \| 0.52 | 0.80 \| 0.65 | 0.61 \| 0.86 |
-| OGB-arxiv|    GCL | 0.23 \| 0.17 | 0.84 \| 0.60 | 0.27 \| 0.64 | 0.54 \| 0.94 |
-|          |    GPL | 0.27 \| 0.20 | 0.27 \| 0.57 | 0.29 \| 0.68 | 0.31 \| 0.94 |
-
-
-
+## Reference
+If you find our code useful for your research, please consider citing our paper.
+```
+@misc{liu2026crossparadigmgraphbackdoorattacks,
+      title={Cross-Paradigm Graph Backdoor Attacks with Promptable Subgraph Triggers}, 
+      author={Dongyi Liu and Jiangtong Li},
+      year={2026},
+      eprint={2510.22555},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR},
+      url={https://arxiv.org/abs/2510.22555}, 
+}
+```
 
 
 
